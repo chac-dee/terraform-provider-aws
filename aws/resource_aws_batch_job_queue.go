@@ -32,7 +32,7 @@ func resourceAwsBatchJobQueue() *schema.Resource {
 			"compute_environments": {
 				Type:     schema.TypeList,
 				Required: true,
-				MaxItems: 1,
+				MaxItems: 3,
 				Elem: &schema.Resource{
 					Schema: map[string]*schema.Schema{
 						"compute_environment": {
@@ -79,7 +79,7 @@ func resourceAwsBatchJobQueueCreate(d *schema.ResourceData, meta interface{}) er
 	defaultTagsConfig := meta.(*AWSClient).DefaultTagsConfig
 	tags := defaultTagsConfig.MergeTags(keyvaluetags.New(d.Get("tags").(map[string]interface{})))
 	input := batch.CreateJobQueueInput{
-		ComputeEnvironmentOrder: createComputeEnvironmentOrder(d.Get("compute_environments").([]map[string]interface{})),
+		ComputeEnvironmentOrder: createComputeEnvironmentOrder(d.Get("compute_environments").([]interface{})),
 		JobQueueName:            aws.String(d.Get("name").(string)),
 		Priority:                aws.Int64(int64(d.Get("priority").(int))),
 		State:                   aws.String(d.Get("state").(string)),
@@ -171,7 +171,7 @@ func resourceAwsBatchJobQueueUpdate(d *schema.ResourceData, meta interface{}) er
 	if d.HasChanges("compute_environments", "priority", "state") {
 		name := d.Get("name").(string)
 		updateInput := &batch.UpdateJobQueueInput{
-			ComputeEnvironmentOrder: createComputeEnvironmentOrder(d.Get("compute_environments").([]map[string]interface{})),
+			ComputeEnvironmentOrder: createComputeEnvironmentOrder(d.Get("compute_environments").([]interface{})),
 			JobQueue:                aws.String(name),
 			Priority:                aws.Int64(int64(d.Get("priority").(int))),
 			State:                   aws.String(d.Get("state").(string)),
@@ -226,10 +226,13 @@ func resourceAwsBatchJobQueueDelete(d *schema.ResourceData, meta interface{}) er
 }
 
 func createComputeEnvironmentOrder(computeEnvironmentOrder []interface{}) (envs []*batch.ComputeEnvironmentOrder) {
+
 	for _, env := range computeEnvironmentOrder {
+		m := env.(map[string]interface{})
+
 		envs = append(envs, &batch.ComputeEnvironmentOrder{
-			Order:              aws.Int64(int64(env["order"].(int64))),
-			ComputeEnvironment: aws.String(env["compute_environment"].(string)),
+			Order:              aws.Int64(int64(m["order"].(int64))),
+			ComputeEnvironment: aws.String(m["compute_environment"].(string)),
 		})
 	}
 	return
