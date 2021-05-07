@@ -30,9 +30,9 @@ func resourceAwsBatchJobQueue() *schema.Resource {
 
 		Schema: map[string]*schema.Schema{
 			"compute_environments": {
-				Type:     schema.TypeSet,
+				Type:     schema.TypeList,
 				Required: true,
-				MaxItems: 3,
+				MaxItems: 1,
 				Elem: &schema.Resource{
 					Schema: map[string]*schema.Schema{
 						"compute_environment": {
@@ -225,7 +225,7 @@ func resourceAwsBatchJobQueueDelete(d *schema.ResourceData, meta interface{}) er
 	return nil
 }
 
-func createComputeEnvironmentOrder(computeEnvironmentOrder []map[string]interface{}) (envs []*batch.ComputeEnvironmentOrder) {
+func createComputeEnvironmentOrder(computeEnvironmentOrder []interface{}) (envs []*batch.ComputeEnvironmentOrder) {
 	for _, env := range computeEnvironmentOrder {
 		envs = append(envs, &batch.ComputeEnvironmentOrder{
 			Order:              aws.Int64(int64(env["order"].(int64))),
