@@ -78,8 +78,15 @@ func resourceAwsBatchJobQueueCreate(d *schema.ResourceData, meta interface{}) er
 	conn := meta.(*AWSClient).batchconn
 	defaultTagsConfig := meta.(*AWSClient).DefaultTagsConfig
 	tags := defaultTagsConfig.MergeTags(keyvaluetags.New(d.Get("tags").(map[string]interface{})))
+
+	var computeResources []*batch.ComputeEnvironmentOrder
+
+	if err := d.Set("compute_environments", createComputeEnvironmentOrder(computeResources)); err != nil {
+		return err
+	}
+
 	input := batch.CreateJobQueueInput{
-		ComputeEnvironmentOrder: createComputeEnvironmentOrder(d.Get("compute_environments").([]interface{})),
+		ComputeEnvironmentOrder: d.Get("compute_environments").([]*batch.ComputeEnvironmentOrder),
 		JobQueueName:            aws.String(d.Get("name").(string)),
 		Priority:                aws.Int64(int64(d.Get("priority").(int))),
 		State:                   aws.String(d.Get("state").(string)),
@@ -170,8 +177,14 @@ func resourceAwsBatchJobQueueUpdate(d *schema.ResourceData, meta interface{}) er
 
 	if d.HasChanges("compute_environments", "priority", "state") {
 		name := d.Get("name").(string)
+		var computeResources []*batch.ComputeEnvironmentOrder
+
+		if err := d.Set("compute_environments", createComputeEnvironmentOrder(computeResources)); err != nil {
+			return err
+		}
+
 		updateInput := &batch.UpdateJobQueueInput{
-			ComputeEnvironmentOrder: createComputeEnvironmentOrder(d.Get("compute_environments").([]interface{})),
+			ComputeEnvironmentOrder: d.Get("compute_environments").([]*batch.ComputeEnvironmentOrder),
 			JobQueue:                aws.String(name),
 			Priority:                aws.Int64(int64(d.Get("priority").(int))),
 			State:                   aws.String(d.Get("state").(string)),
@@ -225,17 +238,16 @@ func resourceAwsBatchJobQueueDelete(d *schema.ResourceData, meta interface{}) er
 	return nil
 }
 
-func createComputeEnvironmentOrder(computeEnvironmentOrder []interface{}) (envs []*batch.ComputeEnvironmentOrder) {
+func createComputeEnvironmentOrder(computeEnvironments []*batch.ComputeEnvironmentOrder) []map[string]interface{} {
 
-	for _, env := range computeEnvironmentOrder {
-		m := env.(map[string]interface{})
-
-		envs = append(envs, &batch.ComputeEnvironmentOrder{
-			Order:              aws.Int64(int64(m["order"].(int64))),
-			ComputeEnvironment: aws.String(m["compute_environment"].(string)),
-		})
+	result := make([]map[string]interface{}, 0, len(computeEnvironments))
+	for _, env := range computeEnvironments {
+		m := make(map[string]interface{})
+		m["order"] = aws.Int64Value(env.Order)
+		m["compute_environment"] = aws.StringValue(env.ComputeEnvironment)
+		result = append(result, m)
 	}
-	return
+	return result
 }
 
 func deleteBatchJobQueue(jobQueue string, conn *batch.Batch) error {
