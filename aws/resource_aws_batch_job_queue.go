@@ -80,9 +80,9 @@ func resourceAwsBatchJobQueueCreate(d *schema.ResourceData, meta interface{}) er
 	tags := defaultTagsConfig.MergeTags(keyvaluetags.New(d.Get("tags").(map[string]interface{})))
 
 	input := batch.CreateJobQueueInput{
-		JobQueueName:            aws.String(d.Get("name").(string)),
-		Priority:                aws.Int64(int64(d.Get("priority").(int))),
-		State:                   aws.String(d.Get("state").(string)),
+		JobQueueName: aws.String(d.Get("name").(string)),
+		Priority:     aws.Int64(int64(d.Get("priority").(int))),
+		State:        aws.String(d.Get("state").(string)),
 	}
 	if v, ok := d.GetOk("compute_environments"); ok {
 		input.ComputeEnvironmentOrder = createComputeEnvironmentOrder(v.([]interface{}))
