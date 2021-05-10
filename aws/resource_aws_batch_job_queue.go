@@ -31,7 +31,6 @@ func resourceAwsBatchJobQueue() *schema.Resource {
 		Schema: map[string]*schema.Schema{
 			"compute_environments": {
 				Type:     schema.TypeList,
-				Computed: true,
 				Required: true,
 				MaxItems: 3,
 				Elem: &schema.Resource{
@@ -81,7 +80,6 @@ func resourceAwsBatchJobQueueCreate(d *schema.ResourceData, meta interface{}) er
 	tags := defaultTagsConfig.MergeTags(keyvaluetags.New(d.Get("tags").(map[string]interface{})))
 
 	input := batch.CreateJobQueueInput{
-		ComputeEnvironmentOrder: d.Get("compute_environments").([]*batch.ComputeEnvironmentOrder),
 		JobQueueName:            aws.String(d.Get("name").(string)),
 		Priority:                aws.Int64(int64(d.Get("priority").(int))),
 		State:                   aws.String(d.Get("state").(string)),
