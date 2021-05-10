@@ -91,6 +91,14 @@ func resourceAwsBatchJobQueueCreate(d *schema.ResourceData, meta interface{}) er
 		State:                   aws.String(d.Get("state").(string)),
 	}
 
+	if v, ok := d.GetOk("compute_environments"); ok {
+		input.ComputeEnvironmentOrder  = createComputeEnvironmentOrderDeprecated(v.([]interface{}))
+	} else if v, ok := d.GetOk("compute_environment_orders"); ok {
+		input.ComputeEnvironmentOrder  = createComputeEnvironmentOrder(v.([]interface{}))
+	} else {
+		return fmt.Errorf("either compute_environments or compute_environment_orders must be passed")
+	}
+
 	if len(tags) > 0 {
 		input.Tags = tags.IgnoreAws().BatchTags()
 	}
@@ -231,21 +239,24 @@ func resourceAwsBatchJobQueueDelete(d *schema.ResourceData, meta interface{}) er
 	return nil
 }
 
-func createComputeEnvironmentOrder(order []interface{}) (envs []*batch.ComputeEnvironmentOrder) {
+
+func createComputeEnvironmentOrderDeprecated(order []interface{}) (envs []*batch.ComputeEnvironmentOrder) {
 	for i, env := range order {
-		switch v := env.(type) {
-		case string:
-			envs = append(envs, &batch.ComputeEnvironmentOrder{
-				Order:              aws.Int64(int64(i)),
-				ComputeEnvironment: aws.String(v),
-			})
-		default:
-			m := env.(map[string]interface{})
-			envs = append(envs, &batch.ComputeEnvironmentOrder{
-				Order:              aws.Int64(m["order"].(int64)),
-				ComputeEnvironment: aws.String(m["compute_environment"].(string)),
-			})
-		}
+		envs = append(envs, &batch.ComputeEnvironmentOrder{
+			Order:              aws.Int64(int64(i)),
+			ComputeEnvironment: aws.String(env.(string)),
+		})
+	}
+	return
+}
+
+func createComputeEnvironmentOrder(order []interface{}) (envs []*batch.ComputeEnvironmentOrder) {
+	for _, env := range order {
+		m := env.(map[string]interface{})
+		envs = append(envs, &batch.ComputeEnvironmentOrder{
+			Order:              aws.Int64(m["order"].(int64)),
+			ComputeEnvironment: aws.String(m["compute_environment"].(string)),
+		})
 	}
 	return
 }
