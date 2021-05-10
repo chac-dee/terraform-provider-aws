@@ -173,9 +173,9 @@ func resourceAwsBatchJobQueueUpdate(d *schema.ResourceData, meta interface{}) er
 
 		updateInput := &batch.UpdateJobQueueInput{
 			ComputeEnvironmentOrder: createComputeEnvironmentOrder(d.Get("compute_environments").([]interface{})),
-			JobQueue: aws.String(name),
-			Priority: aws.Int64(int64(d.Get("priority").(int))),
-			State:    aws.String(d.Get("state").(string)),
+			JobQueue:                aws.String(name),
+			Priority:                aws.Int64(int64(d.Get("priority").(int))),
+			State:                   aws.String(d.Get("state").(string)),
 		}
 		_, err := conn.UpdateJobQueue(updateInput)
 		if err != nil {
@@ -230,11 +230,11 @@ func createComputeEnvironmentOrder(order []interface{}) (envs []*batch.ComputeEn
 	for _, env := range order {
 		m := env.(map[string]interface{})
 		envs = append(envs, &batch.ComputeEnvironmentOrder{
-			Order: aws.Int64(m["order"].(int64)),
+			Order:              aws.Int64(m["order"].(int64)),
 			ComputeEnvironment: aws.String(m["compute_environment"].(string)),
 		})
 	}
-	return envs
+	return
 }
 
 func deleteBatchJobQueue(jobQueue string, conn *batch.Batch) error {
