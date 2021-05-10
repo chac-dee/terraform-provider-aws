@@ -78,13 +78,13 @@ func resourceAwsBatchJobQueueCreate(d *schema.ResourceData, meta interface{}) er
 	conn := meta.(*AWSClient).batchconn
 	defaultTagsConfig := meta.(*AWSClient).DefaultTagsConfig
 	tags := defaultTagsConfig.MergeTags(keyvaluetags.New(d.Get("tags").(map[string]interface{})))
+
 	input := batch.CreateJobQueueInput{
 		ComputeEnvironmentOrder: createComputeEnvironmentOrder(d.Get("compute_environments").([]interface{})),
 		JobQueueName:            aws.String(d.Get("name").(string)),
 		Priority:                aws.Int64(int64(d.Get("priority").(int))),
 		State:                   aws.String(d.Get("state").(string)),
 	}
-
 	if len(tags) > 0 {
 		input.Tags = tags.IgnoreAws().BatchTags()
 	}
@@ -170,6 +170,7 @@ func resourceAwsBatchJobQueueUpdate(d *schema.ResourceData, meta interface{}) er
 
 	if d.HasChanges("compute_environments", "priority", "state") {
 		name := d.Get("name").(string)
+
 		updateInput := &batch.UpdateJobQueueInput{
 			ComputeEnvironmentOrder: createComputeEnvironmentOrder(d.Get("compute_environments").([]interface{})),
 			JobQueue:                aws.String(name),
@@ -225,13 +226,11 @@ func resourceAwsBatchJobQueueDelete(d *schema.ResourceData, meta interface{}) er
 	return nil
 }
 
-func createComputeEnvironmentOrder(computeEnvironmentOrder []interface{}) (envs []*batch.ComputeEnvironmentOrder) {
-
-	for _, env := range computeEnvironmentOrder {
+func createComputeEnvironmentOrder(order []interface{}) (envs []*batch.ComputeEnvironmentOrder) {
+	for _, env := range order {
 		m := env.(map[string]interface{})
-
 		envs = append(envs, &batch.ComputeEnvironmentOrder{
-			Order:              aws.Int64(int64(m["order"].(int64))),
+			Order:              aws.Int64(m["order"].(int64)),
 			ComputeEnvironment: aws.String(m["compute_environment"].(string)),
 		})
 	}
