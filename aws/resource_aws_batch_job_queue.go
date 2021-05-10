@@ -31,7 +31,6 @@ func resourceAwsBatchJobQueue() *schema.Resource {
 		Schema: map[string]*schema.Schema{
 			"compute_environments": {
 				Type:     schema.TypeList,
-				Computed: true,
 				Required: true,
 				MaxItems: 3,
 				Elem: &schema.Resource{
@@ -81,13 +80,10 @@ func resourceAwsBatchJobQueueCreate(d *schema.ResourceData, meta interface{}) er
 	tags := defaultTagsConfig.MergeTags(keyvaluetags.New(d.Get("tags").(map[string]interface{})))
 
 	input := batch.CreateJobQueueInput{
-		ComputeEnvironmentOrder: d.Get("compute_environments").([]*batch.ComputeEnvironmentOrder),
+		ComputeEnvironmentOrder: createComputeEnvironmentOrder(d.Get("compute_environments").([]interface{})),
 		JobQueueName:            aws.String(d.Get("name").(string)),
 		Priority:                aws.Int64(int64(d.Get("priority").(int))),
 		State:                   aws.String(d.Get("state").(string)),
-	}
-	if v, ok := d.GetOk("compute_environments"); ok {
-		input.ComputeEnvironmentOrder = createComputeEnvironmentOrder(v.([]interface{}))
 	}
 	if len(tags) > 0 {
 		input.Tags = tags.IgnoreAws().BatchTags()
@@ -176,12 +172,10 @@ func resourceAwsBatchJobQueueUpdate(d *schema.ResourceData, meta interface{}) er
 		name := d.Get("name").(string)
 
 		updateInput := &batch.UpdateJobQueueInput{
+			ComputeEnvironmentOrder: createComputeEnvironmentOrder(d.Get("compute_environments").([]interface{})),
 			JobQueue: aws.String(name),
 			Priority: aws.Int64(int64(d.Get("priority").(int))),
 			State:    aws.String(d.Get("state").(string)),
-		}
-		if v, ok := d.GetOk("compute_environments"); ok {
-			updateInput.ComputeEnvironmentOrder = createComputeEnvironmentOrder(v.([]interface{}))
 		}
 		_, err := conn.UpdateJobQueue(updateInput)
 		if err != nil {
@@ -232,16 +226,13 @@ func resourceAwsBatchJobQueueDelete(d *schema.ResourceData, meta interface{}) er
 	return nil
 }
 
-func createComputeEnvironmentOrder(computeEnvironmentOrder []interface{}) (envs []*batch.ComputeEnvironmentOrder) {
-
-	for _, env := range computeEnvironmentOrder {
-		config := &batch.ComputeEnvironmentOrder{}
+func createComputeEnvironmentOrder(order []interface{}) (envs []*batch.ComputeEnvironmentOrder) {
+	for _, env := range order {
 		m := env.(map[string]interface{})
-		if v, ok := m["compute_instance"].(string); ok && v != "" {
-			config.ComputeEnvironment = aws.String(v)
-		}
-		config.Order = aws.Int64(m["order"].(int64))
-		envs = append(envs, config)
+		envs = append(envs, &batch.ComputeEnvironmentOrder{
+			Order: aws.Int64(m["order"].(int64)),
+			ComputeEnvironment: aws.String(m["compute_environment"].(string)),
+		})
 	}
 	return envs
 }
