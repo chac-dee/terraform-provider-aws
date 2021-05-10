@@ -85,16 +85,15 @@ func resourceAwsBatchJobQueueCreate(d *schema.ResourceData, meta interface{}) er
 	defaultTagsConfig := meta.(*AWSClient).DefaultTagsConfig
 	tags := defaultTagsConfig.MergeTags(keyvaluetags.New(d.Get("tags").(map[string]interface{})))
 	input := batch.CreateJobQueueInput{
-		ComputeEnvironmentOrder: createComputeEnvironmentOrder(d.Get("compute_environments").([]interface{})),
-		JobQueueName:            aws.String(d.Get("name").(string)),
-		Priority:                aws.Int64(int64(d.Get("priority").(int))),
-		State:                   aws.String(d.Get("state").(string)),
+		JobQueueName: aws.String(d.Get("name").(string)),
+		Priority:     aws.Int64(int64(d.Get("priority").(int))),
+		State:        aws.String(d.Get("state").(string)),
 	}
 
 	if v, ok := d.GetOk("compute_environments"); ok {
-		input.ComputeEnvironmentOrder  = createComputeEnvironmentOrderDeprecated(v.([]interface{}))
+		input.ComputeEnvironmentOrder = createComputeEnvironmentOrderDeprecated(v.([]interface{}))
 	} else if v, ok := d.GetOk("compute_environment_orders"); ok {
-		input.ComputeEnvironmentOrder  = createComputeEnvironmentOrder(v.([]interface{}))
+		input.ComputeEnvironmentOrder = createComputeEnvironmentOrder(v.([]interface{}))
 	} else {
 		return fmt.Errorf("either compute_environments or compute_environment_orders must be passed")
 	}
@@ -185,11 +184,19 @@ func resourceAwsBatchJobQueueUpdate(d *schema.ResourceData, meta interface{}) er
 	if d.HasChanges("compute_environments", "priority", "state") {
 		name := d.Get("name").(string)
 		updateInput := &batch.UpdateJobQueueInput{
-			ComputeEnvironmentOrder: createComputeEnvironmentOrder(d.Get("compute_environments").([]interface{})),
-			JobQueue:                aws.String(name),
-			Priority:                aws.Int64(int64(d.Get("priority").(int))),
-			State:                   aws.String(d.Get("state").(string)),
+			JobQueue: aws.String(name),
+			Priority: aws.Int64(int64(d.Get("priority").(int))),
+			State:    aws.String(d.Get("state").(string)),
 		}
+
+		if v, ok := d.GetOk("compute_environments"); ok {
+			updateInput.ComputeEnvironmentOrder = createComputeEnvironmentOrderDeprecated(v.([]interface{}))
+		} else if v, ok := d.GetOk("compute_environment_orders"); ok {
+			updateInput.ComputeEnvironmentOrder = createComputeEnvironmentOrder(v.([]interface{}))
+		} else {
+			return fmt.Errorf("either compute_environments or compute_environment_orders must be passed")
+		}
+
 		_, err := conn.UpdateJobQueue(updateInput)
 		if err != nil {
 			return err
@@ -238,7 +245,6 @@ func resourceAwsBatchJobQueueDelete(d *schema.ResourceData, meta interface{}) er
 
 	return nil
 }
-
 
 func createComputeEnvironmentOrderDeprecated(order []interface{}) (envs []*batch.ComputeEnvironmentOrder) {
 	for i, env := range order {
