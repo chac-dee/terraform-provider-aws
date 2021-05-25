@@ -143,7 +143,7 @@ func resourceAwsBatchJobQueueRead(d *schema.ResourceData, meta interface{}) erro
 		computeEnvironments = append(computeEnvironments, aws.StringValue(computeEnvironmentOrder.ComputeEnvironment))
 	}
 
-	if err := d.Set("compute_environments", computeEnvironments); err != nil {
+	if err := d.Set("compute_environment_order", computeEnvironments); err != nil {
 		return fmt.Errorf("error setting compute_environments: %s", err)
 	}
 
@@ -168,7 +168,7 @@ func resourceAwsBatchJobQueueRead(d *schema.ResourceData, meta interface{}) erro
 func resourceAwsBatchJobQueueUpdate(d *schema.ResourceData, meta interface{}) error {
 	conn := meta.(*AWSClient).batchconn
 
-	if d.HasChanges("compute_environments", "priority", "state") {
+	if d.HasChanges("compute_environment_order", "priority", "state") {
 		name := d.Get("name").(string)
 
 		updateInput := &batch.UpdateJobQueueInput{
@@ -230,7 +230,7 @@ func createComputeEnvironmentOrder(order []interface{}) (envs []*batch.ComputeEn
 	for _, env := range order {
 		m := env.(map[string]interface{})
 		envs = append(envs, &batch.ComputeEnvironmentOrder{
-			Order:              aws.Int64(m["order"].(int64)),
+			Order:              aws.Int64(int64(m["order"].(int))),
 			ComputeEnvironment: aws.String(m["compute_environment"].(string)),
 		})
 	}
